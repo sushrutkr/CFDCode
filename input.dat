@@ -1,18 +1,18 @@
 ===============================| INPUT FILE |====================================
 
 ___________________________| Domain Information |________________________________
-nx      ny
-100     50
+nx      ny (+2 in both direction for ghost cells)
+130     130
 
-dx      dy
-0.02    0.02
+Lx      Ly 
+1       1   
 
 
 ________________________| Iterative Solver Settings |____________________________
-w   itermax
-1   20
+w-AD    w-PPE   AD-itermax  PPE-itermax     AD_Solver PPE_Solver(1. Point GS, 2. Line SOR)
+1       1.2     5           300              2        1
 
 
 ___________________________| Simulation Settings |_______________________________
-ErrorMax    tmax    dt      Re
-1E-6        1       0.001   1000
+ErrorMax    tmax    dt      Re      mu
+1E-8        5      0.001   100     0.01
