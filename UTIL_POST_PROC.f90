@@ -1,6 +1,42 @@
 subroutine writepostproc()
     
     use global_variables
+    use boundary_conditions
+
+    !modifying domain data
+    x(1) = 0 
+    x(nx) = x(nx-1) + dx/2
+    y(1) = 0
+    y(ny) = y(ny-1) + dy/2
+
+    !modifying the velocity data
+    j = 1
+    DO i = 1,nx
+        u(i,j) = u_bc_s
+        v(i,j) = v_bc_s
+    END DO
+
+    !top wall data
+    j = ny
+    DO i=1,nx
+        u(i,j) = u_bc_n
+        v(i,j) = v_bc_n
+    END DO
+    
+    !left wall data
+    i=1
+    DO j=2,ny-1
+        u(i,j) = u_bc_w
+        v(i,j) = v_bc_w
+    END DO
+
+    !right wall data
+    i=nx
+    DO j=2,ny-1
+        u(i,j) = u_bc_e
+        v(i,j) = v_bc_e
+    END DO
+
 
     vor = 0
     DO j=2,ny-1
@@ -24,31 +60,8 @@ subroutine writepostproc()
     
     DO j=1,ny
         DO i = 1,nx
-            write(12,*) x(i), y(j), U(i,j), V(i,j),velmag(i,j), P(i,j), vor(i,j) 
+            WRITE(12,*) x(i), y(j), U(i,j), V(i,j),velmag(i,j), P(i,j), vor(i,j) 
         END DO
     END DO
     close(12)
-
-    open(13, file="data_ufacevel.dat", status='unknown')
-    WRITE(13,*) 'TITLE = "Post Processing Tecplot"'
-    WRITE(13,*) 'VARIABLES = "X", "Y", "uf"'
-    WRITE(13,*) 'ZONE T="BIG ZONE", I=',nx,', J=',ny-2,', DATAPACKING=POINT'
-    DO j=1,ny-2
-        DO i = 1,nx
-            write(13,*) i, j, uf(i,j)
-        END DO
-    END DO
-    ClOSE(13)
-
-    open(14, file="data_vfacevel.dat", status='unknown')
-    WRITE(14,*) 'TITLE = "Post Processing Tecplot"'
-    WRITE(14,*) 'VARIABLES = "X", "Y", "vf"'
-    WRITE(14,*) 'ZONE T="BIG ZONE", I=',nx-2,', J=',ny,', DATAPACKING=POINT'
-    DO j=1,ny
-        DO i = 1,nx-2
-            write(14,*) i, j, vf(i,j)
-        END DO
-    END DO
-    ClOSE(14)
-
 end subroutine

@@ -5,6 +5,7 @@ MODULE global_variables
     REAL :: w_AD, w_PPE, tmax, dt, Re, mu
     REAL :: cflx, cfly, rx, ry, AAD, BAD, APPE, BPPE
     REAL :: x0, y0, r0, r, vt
+    REAL :: start, finish
     REAL, ALLOCATABLE, DIMENSION(:) :: x, y, bx, un, ukx, bcx, by, vn, vky, bcy, bp
     REAL, ALLOCATABLE, DIMENSION(:,:) :: u, v, uk, vk, ukp1, vkp1, vor, p, pk, uf, vf,velmag
 END MODULE global_variables
@@ -44,19 +45,22 @@ SUBROUTINE readdata()
 END SUBROUTINE
 
 SUBROUTINE domain_init()
-    !!!! Yet to set domain according to faces
-
     USE global_variables
-    x(1) = -dx
-    y(1) = -dy
+    REAL :: dxc, dyc
+    dxc = lx/(nx-2)
+    dyc = ly/(ny-2)
+
+    x(1) = -dxc/2
+    y(1) = -dyc/2
     
     DO i = 2,nx
-        x(i) = x(i-1) + dx
+        x(i) = x(i-1) + dxc
     END DO
     
     DO j = 2,ny
-        y(j) = y(j-1) + dy
+        y(j) = y(j-1) + dyc
     END DO
+
 
 END SUBROUTINE
 

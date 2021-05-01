@@ -3,6 +3,7 @@
 
 program CFDCode
     use global_variables
+    CALL cpu_time(start)
     CALL readdata()
 
     open(11, file='log.dat', status='old')
@@ -29,7 +30,6 @@ program CFDCode
 
     CALL domain_init()    
     CALL flow_init()
-
     write(11,*) "Initiating Calculations .........................."
     write(11,*)
     write(11,*) "time,  Error_x-AD,  Error_y-AD,  Error_PPE"
@@ -55,12 +55,16 @@ program CFDCode
     write(11,*)
       
     CALL writepostproc()
-    close(11)
+    
     deallocate(x,y)
     deallocate(u,uk,ukp1)
     deallocate(v,vk,vkp1)
     deallocate(vor,velmag)
     deallocate(p, pk, bp, vf, uf)
     deallocate(bx, by, un, vn, ukx, vky, bcx, bcy)
+    call cpu_time(finish)
+
+    write(11,*) "Total Simulation Time : ", (finish-start)/60 , "mins"
+    close(11)
 
 end program CFDCode
