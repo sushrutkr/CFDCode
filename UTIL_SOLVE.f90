@@ -181,18 +181,18 @@ subroutine PPESolver()
     DO WHILE(errorppe>errormax)
         DO j=2,ny-1
             DO i=2,nx-1
-                ! coeff = coeff_abs + dx2*ghost(i+1,j) + dx2*ghost(i-1,j) &
-                !                   + dy2*ghost(i,j+1) + dy2*ghost(i,j-1)
-
-                ! p(i,j) = ps(i,j)
-                ! p(i,j) = p(i,j) - ((iblank_cc(i+1,j)*p(i+1,j) + iblank_cc(i-1,j)*p(i-1,j))/(dx**2)) &
-                !                 - ((iblank_cc(i,j+1)*p(i,j+1) + iblank_cc(i,j-1)*p(i,j-1))/(dy**2))
-                ! p(i,j) = iblank_cc(i,j)*p(i,j)/coeff
+                coeff = coeff_abs + dx2*ghost(i+1,j) + dx2*ghost(i-1,j) &
+                                  + dy2*ghost(i,j+1) + dy2*ghost(i,j-1)
 
                 p(i,j) = ps(i,j)
-                p(i,j) = p(i,j) - ((p(i+1,j) + p(i-1,j))/(dx**2)) - ((p(i,j+1) + p(i,j-1))/(dy**2))
-                p(i,j) = -iblank_cc(i,j)*p(i,j)/((2/(dx**2)) + (2/(dy**2)))
-                p(i,j) = (1-w_PPE)*pk(i,j) + w_PPE*p(i,j)
+                p(i,j) = p(i,j) - ((iblank_cc(i+1,j)*p(i+1,j) + iblank_cc(i-1,j)*p(i-1,j))/(dx**2)) &
+                                - ((iblank_cc(i,j+1)*p(i,j+1) + iblank_cc(i,j-1)*p(i,j-1))/(dy**2))
+                p(i,j) = iblank_cc(i,j)*p(i,j)/coeff
+
+                ! p(i,j) = ps(i,j)
+                ! p(i,j) = p(i,j) - ((p(i+1,j) + p(i-1,j))/(dx**2)) - ((p(i,j+1) + p(i,j-1))/(dy**2))
+                ! p(i,j) = -iblank_cc(i,j)*p(i,j)/((2/(dx**2)) + (2/(dy**2)))
+                ! p(i,j) = (1-w_PPE)*pk(i,j) + w_PPE*p(i,j)
                 ! pkp1(i,j) = p(i,j)
                 ! factor = ghost(i,j)*(iblank_cc(i,j-1) + iblank_cc(i,j+1) + iblank_cc(i-1,j) + iblank_cc(i+1,j)) &
                 !             + (1-ghost(i,j))
