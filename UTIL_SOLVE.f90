@@ -233,7 +233,6 @@ subroutine PPESolver()
             END DO
         END DO
         !errorppe = 0
-        errorppe = MAXVAL(ABS(p) - ABS(pk))
         errorppe = MAXVAL(ABS(p - pk))
         !CALL calc_residual(p,pk,errorppe,nx,ny)
         pk(:,:) = p(:,:)
