@@ -17,7 +17,7 @@ w-AD    w-PPE   AD-itermax  PPE-itermax    AD_Solver PPE_Solver(1. Point GS, 2. 
 
 ___________________________| Simulation Settings |_______________________________
 ErrorMax    tmax    dt       Re      mu
-1E-8        1       0.001    150    0.01
+1E-6        20       0.001    150    0.01
 
 ___________________________| Data Write |_______________________________
 Write Interval(t/dt)

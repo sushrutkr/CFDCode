@@ -1,5 +1,5 @@
 ! My CFD code 
-! Compile - gfortran UTIL_PRE_SIM.f90 UTIL_POST_PROC.f90 TDMA.f90 UTIL_SOLVE.f90 UTIL_IMMERSED_BNDRY.f90 UTIL_BC.f90 MAIN.f90
+! Compile - ifort modules.f90 UTIL_PRE_SIM.f90 UTIL_POST_PROC.f90 TDMA.f90 UTIL_SOLVE.f90 UTIL_IMMERSED_BNDRY.f90 UTIL_BC.f90 MAIN.f90
 ! Read File Flag
 !       2 - read input, 3 - readrestart, 11 - log, 12 - data.dat, 13 -midwrite
 program CFDCode
@@ -13,7 +13,7 @@ program CFDCode
     write(11,*) " CODE BEGUN.........................."
     write(11,*)
     write(11,*) " Simulation Parameters are nx, ny, dx, dy, w, errormax,tmax, dt, Re "
-    write(11,*) nx-2, ny-2, dx, dy, w_PPE, errormax,tmax, dt, Re
+    write(11,*) nx, ny, dx, dy, w_PPE, errormax,tmax, dt, Re
     write(11,*)
     write(11,*) "Initialising the domain .........................."
     write(11,*)  
@@ -54,14 +54,13 @@ program CFDCode
         write(11,*) t, errorx, errory, errorppe
 
         write_flag = write_flag + 1
-        IF (write_flag .EQ. 200) THEN
+        IF (write_flag .EQ. 275) THEN
             CALL data_write()
             
         END IF
 
         IF (mod(write_flag,write_inter) .EQ. 0) THEN
             CALL data_write()
-            
         END IF
         !print *, errorppe
         t = t+dt

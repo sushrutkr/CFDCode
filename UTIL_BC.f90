@@ -1,9 +1,3 @@
-MODULE boundary_conditions
-    REAL, PARAMETER :: u_bc_w = 1, u_bc_e = 0, u_bc_n = 0, u_bc_s = 0
-    REAL, PARAMETER :: v_bc_w = 0, v_bc_e = 0, v_bc_n = 0, v_bc_s = 0 
-    REAL, PARAMETER :: p_bc_w = 0, p_bc_e = 0, p_bc_n = 0, p_bc_s = 0
-END MODULE boundary_conditions
-
 SUBROUTINE set_dirichlet_bc()
     USE global_variables
     USE boundary_conditions

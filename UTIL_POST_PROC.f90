@@ -96,12 +96,12 @@ SUBROUTINE data_write()
 
     open(13, file=fname, status='unknown')
     WRITE(13,*) 'TITLE = "Post Processing Tecplot"'
-    WRITE(13,*) 'VARIABLES = "X", "Y", "U", "V", "P", "Vorticity", "iblank", "Ghost", "Velocity Magnitude"'
+    WRITE(13,*) 'VARIABLES = "X", "Y", "U", "V", "P",' !"Vorticity", "iblank", "Ghost", "Velocity Magnitude"'
     WRITE(13,*) 'ZONE T="BIG ZONE", I=',nx,', J=',ny,', DATAPACKING=POINT'
     
     DO j=1,ny
         DO i = 1,nx
-            WRITE(13,*) x(i), y(j), U(i,j), V(i,j), P(i,j), vor(i,j), iblank_cc(i,j), ghost(i,j), SQRT(u(i,j)**2 + v(i,j)**2)
+            WRITE(13,*) i, j, U(i,j), V(i,j), P(i,j)!, vor(i,j), iblank_cc(i,j), ghost(i,j), SQRT(u(i,j)**2 + v(i,j)**2)
         END DO
     END DO
     close(13)

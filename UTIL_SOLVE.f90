@@ -21,31 +21,53 @@ subroutine ADSolver()
     sy = 0
     DO j = 2,ny-1
         DO i = 2,nx-1
-            sx(i,j) = (u(i,j) - (dt/(2*dx))*(u(i+1,j)*uf(i+1,j-1) - u(i-1,j)*uf(i-1,j-1)) &
-                              - (dt/(2*dy))*(u(i,j+1)*vf(i-1,j+1) - u(i,j-1)*vf(i-1,j-1)))
+            ! Method A
+            ! sx(i,j) = (u(i,j) - (dt/(2*dx))*(u(i+1,j)*uf(i+1,j-1) - u(i-1,j)*uf(i-1,j-1)) &
+            !                   - (dt/(2*dy))*(u(i,j+1)*vf(i-1,j+1) - u(i,j-1)*vf(i-1,j-1)))
 
-            sy(i,j) = (v(i,j) - (dt/(2*dx))*(v(i+1,j)*uf(i+1,j-1) - v(i-1,j)*uf(i-1,j-1)) &
-                              - (dt/(2*dy))*(v(i,j+1)*vf(i-1,j+1) - v(i,j-1)*vf(i-1,j-1)))
+            ! sy(i,j) = (v(i,j) - (dt/(2*dx))*(v(i+1,j)*uf(i+1,j-1) - v(i-1,j)*uf(i-1,j-1)) &
+            !                   - (dt/(2*dy))*(v(i,j+1)*vf(i-1,j+1) - v(i,j-1)*vf(i-1,j-1)))
+
+            ! Method B
+            sx(i,j) = (u(i,j) - (dt/(dx))*(0.5*(u(i+1,j) + u(i,j))*uf(i,j-1) - 0.5*(u(i,j) + u(i-1,j))*uf(i-1,j-1)) &
+                              - (dt/(dy))*(0.5*(u(i,j+1) + u(i,j))*vf(i-1,j) - 0.5*(u(i,j) + u(i,j-1))*vf(i-1,j-1)))
+
+            sy(i,j) = (v(i,j) - (dt/(dx))*(0.5*(v(i+1,j) + v(i,j))*uf(i,j-1) - 0.5*(v(i,j) + v(i-1,j))*uf(i-1,j-1)) &
+                              - (dt/(dy))*(0.5*(v(i,j+1) + v(i,j))*vf(i-1,j) - 0.5*(v(i,j) + v(i,j-1))*vf(i-1,j-1))) 
+
+            !Method C
+            ! sx(i,j) = u(i,j) - (dt/(2*dx))*(u(i+1,j)*(uf(i+1,j-1) + uf(i,j-1))*0.5 - u(i-1,j)*(uf(i-1,j-1) + uf(i,j-1))*0.5) &
+            !                  - (dt/(2*dy))*(u(i,j+1)*(vf(i-1,j+1) + vf(i-1,j))*0.5 - u(i,j-1)*(vf(i-1,j-1) + vf(i,j-1))*0.5)
+
+            ! sy(i,j) = v(i,j) - (dt/(2*dx))*(v(i+1,j)*(uf(i+1,j-1) + uf(i,j-1))*0.5 - v(i-1,j)*(uf(i-1,j-1) + uf(i,j-1))*0.5) &
+            !                  - (dt/(2*dy))*(v(i,j+1)*(vf(i-1,j+1) + vf(i-1,j))*0.5 - v(i,j-1)*(vf(i-1,j-1) + vf(i,j-1))*0.5)    
+                             
+            !Ji's Methods
+            ! sx(i,j) = u(i,j) - (dt/(2*dx))*(u(i+1,j) - u(i-1,j))*(0.5*(uf(i+1,j-1) + uf(i-1,j-1))) &
+            !                  - (dt/(2*dy))*(u(i,j+1) - u(i,j-1))*(0.5*(vf(i-1,j+1) + vf(i-1,j-1))) 
+
+            ! sy(i,j) = v(i,j) - (dt/(2*dx))*(v(i+1,j) - v(i-1,j))*(0.5*(uf(i+1,j-1) + uf(i-1,j-1))) &
+            !                  - (dt/(2*dy))*(v(i,j+1) - v(i,j-1))*(0.5*(vf(i-1,j+1) + vf(i-1,j-1)))       
         END DO
     END DO
     
     coeff = 1 + ((2*dt)/(Re*(dx**2))) + ((2*dt)/(Re*(dy**2)))
     iter = 0
-    CALL set_velocity_BC()
+    ! CALL set_velocity_BC()
     SELECT CASE(solvetype_AD)
         CASE(1)
             DO WHILE(error>errormax)
-                CALL set_velocity_BC()
+                !CALL set_velocity_BC()
                 DO j = 2,ny-1
                     DO i =2,nx-1
                         ukp1(i,j) = sx(i,j) + (dt/(Re*(dx**2)))*(ukp1(i+1,j) + ukp1(i-1,j)) &
                                             + (dt/(Re*(dy**2)))*(ukp1(i,j+1) + ukp1(i,j-1))
-                        ukp1(i,j) = (iblank_cc(i,j)*ukp1(i,j))/(AAD + ((2*dt)/(Re*(dy**2)))) !
+                        ukp1(i,j) = (iblank_cc(i,j)*ukp1(i,j))/coeff !
                         ukp1(i,j) = (1-w_AD)*uk(i,j) + w_AD*ukp1(i,j)
 
                         vkp1(i,j) = sy(i,j) + (dt/(Re*(dx**2)))*(vkp1(i+1,j) + vkp1(i-1,j)) &
                                             + (dt/(Re*(dy**2)))*(vkp1(i,j+1) + vkp1(i,j-1))
-                        vkp1(i,j) = (iblank_cc(i,j)*vkp1(i,j))/(AAD + ((2*dt)/(Re*(dy**2)))) !
+                        vkp1(i,j) = (iblank_cc(i,j)*vkp1(i,j))/coeff !
                         vkp1(i,j) = (1-w_AD)*vk(i,j) + w_AD*vkp1(i,j)            
                     END DO
                 END DO
@@ -53,9 +75,9 @@ subroutine ADSolver()
                 ! errorx = 0
                 ! errory = 0
                 !CALL calc_residual(ukp1,uk,errorx,nx,ny) 
-                errorx = MAXVAL(ABS(ukp1) - ABS(uk))
+                errorx = MAXVAL(ABS(ukp1 - uk))
                 uk(:,:) = ukp1(:,:)
-                errory = MAXVAL(ABS(vkp1) - ABS(vk))
+                errory = MAXVAL(ABS(vkp1- vk))
                 !CALL calc_residual(vkp1,vk,errory,nx,ny)
                 vk(:,:) = vkp1(:,:)
                 err(1) = errorx
@@ -67,8 +89,8 @@ subroutine ADSolver()
                 ! if(ieee_is_nan(maxval(vkp1))) then
                 !     print *, 'AD Nan', t, iter
                 ! end if
-                ! CALL set_velocity_BC()
             END DO
+            !CALL set_velocity_BC()
             !print *, solvetype_AD, 'AD', error, 'error', t
 
         CASE(2)
@@ -155,13 +177,13 @@ subroutine PPESolver()
         END DO
     END DO
 
-    DO j = 1,ny-2
+    DO j = 2,ny-2
         DO i = 1,nx-2
             vf(i,j) = iblank_fcv(i,j)*(v(i+1,j+1) + v(i+1,j))/2
         END DO 
     END DO
 
-    !CALL mass_correct()
+    CALL mass_correct()
 
     DO j=2,ny-1
         DO i=2,nx-1
@@ -169,8 +191,8 @@ subroutine PPESolver()
         END DO 
     END DO
 
-    uf(nx,:) = 2*u(nx,2:ny-1) - uf(nx-1,:)
-    vf(:,ny) = 2*v(2:nx-1,ny) - vf(:,ny-1)
+    ! uf(nx,:) = 2*u(nx,2:ny-1) - uf(nx-1,:)
+    ! vf(:,ny) = 2*v(2:nx-1,ny) - vf(:,ny-1)
 
     iter = 0
     coeff_abs = -((2/(dx**2)) + (2/(dy**2)))
@@ -181,26 +203,26 @@ subroutine PPESolver()
     DO WHILE(errorppe>errormax)
         DO j=2,ny-1
             DO i=2,nx-1
-                coeff = coeff_abs + dx2*ghost(i+1,j) + dx2*ghost(i-1,j) &
-                                  + dy2*ghost(i,j+1) + dy2*ghost(i,j-1)
-
-                p(i,j) = ps(i,j)
-                p(i,j) = p(i,j) - ((iblank_cc(i+1,j)*p(i+1,j) + iblank_cc(i-1,j)*p(i-1,j))/(dx**2)) &
-                                - ((iblank_cc(i,j+1)*p(i,j+1) + iblank_cc(i,j-1)*p(i,j-1))/(dy**2))
-                p(i,j) = iblank_cc(i,j)*p(i,j)/coeff
+                ! coeff = coeff_abs + dx2*ghost(i+1,j) + dx2*ghost(i-1,j) &
+                !                   + dy2*ghost(i,j+1) + dy2*ghost(i,j-1)
 
                 ! p(i,j) = ps(i,j)
-                ! p(i,j) = p(i,j) - ((p(i+1,j) + p(i-1,j))/(dx**2)) - ((p(i,j+1) + p(i,j-1))/(dy**2))
-                ! p(i,j) = -iblank_cc(i,j)*p(i,j)/((2/(dx**2)) + (2/(dy**2)))
-                ! p(i,j) = (1-w_PPE)*pk(i,j) + w_PPE*p(i,j)
-                ! pkp1(i,j) = p(i,j)
-                ! factor = ghost(i,j)*(iblank_cc(i,j-1) + iblank_cc(i,j+1) + iblank_cc(i-1,j) + iblank_cc(i+1,j)) &
-                !             + (1-ghost(i,j))
-                ! f1 = (1-ghost(i,j))*p(i,j)
-                ! f2 = ghost(i,j)*((iblank_cc(i,j-1)*p(i,j-1) + iblank_cc(i,j+1)*p(i,j+1) &
-                !                                             + iblank_cc(i-1,j)*p(i-1,j) &
-                !                                             + iblank_cc(i+1,j)*p(i+1,j))/factor)
-                ! p(i,j) =  f1 + f2 
+                ! p(i,j) = p(i,j) - ((iblank_cc(i+1,j)*p(i+1,j) + iblank_cc(i-1,j)*p(i-1,j))/(dx**2)) &
+                !                 - ((iblank_cc(i,j+1)*p(i,j+1) + iblank_cc(i,j-1)*p(i,j-1))/(dy**2))
+                ! p(i,j) = iblank_cc(i,j)*p(i,j)/coeff
+
+                p(i,j) = ps(i,j)
+                p(i,j) = p(i,j) - ((p(i+1,j) + p(i-1,j))/(dx**2)) - ((p(i,j+1) + p(i,j-1))/(dy**2))
+                p(i,j) = iblank_cc(i,j)*p(i,j)/coeff_abs
+                p(i,j) = (1-w_PPE)*pk(i,j) + w_PPE*p(i,j)
+                pkp1(i,j) = p(i,j)
+                factor = ghost(i,j)*(iblank_cc(i,j-1) + iblank_cc(i,j+1) + iblank_cc(i-1,j) + iblank_cc(i+1,j)) &
+                            + (1-ghost(i,j))
+                f1 = (1-ghost(i,j))*p(i,j)
+                f2 = ghost(i,j)*((iblank_cc(i,j-1)*p(i,j-1) + iblank_cc(i,j+1)*p(i,j+1) &
+                                                            + iblank_cc(i-1,j)*p(i-1,j) &
+                                                            + iblank_cc(i+1,j)*p(i+1,j))/factor)
+                p(i,j) =  f1 + f2 
 
                 ! if(ieee_is_nan(p(i,j))) then
                 !     print *, 'PPE Iter Nan', t, i, j, ghost(i,j), p(i,j), pkp1(i,j), &
@@ -212,6 +234,7 @@ subroutine PPESolver()
         END DO
         !errorppe = 0
         errorppe = MAXVAL(ABS(p) - ABS(pk))
+        errorppe = MAXVAL(ABS(p - pk))
         !CALL calc_residual(p,pk,errorppe,nx,ny)
         pk(:,:) = p(:,:)
         iter = iter + 1
@@ -221,7 +244,8 @@ subroutine PPESolver()
         !print *, 'PPE', errorppe, iter
         !CALL set_pressure_BC()
     END DO
-    
+    CALL set_pressure_BC()
+    !print *, 'PPE', t, iter, coeff, coeff_abs
 end subroutine
 
 subroutine vel_correct()
@@ -237,7 +261,7 @@ subroutine vel_correct()
 
     !Face Center Velocity Correction
     DO j=1,ny-2
-        DO i=2,nx-2
+        DO i=2,nx-1
             uf(i,j) = iblank_fcu(i,j)*(uf(i,j) - (dt/dx)*(p(i+1,j+1) - p(i,j+1)))
         END DO
     END DO
@@ -249,43 +273,46 @@ subroutine vel_correct()
     END DO
 end subroutine
 
-! ! SUBROUTINE mass_correct()
-! !     USE global_variables
-! !     USE immersed_boundary
-! !     REAL :: left_sum, right_sum, mass_error
+SUBROUTINE mass_correct()
+    USE global_variables
+    USE immersed_boundary
+    REAL :: left_sum, right_sum, mass_error
 
-! !     left_sum = 0
-! !     left_sum = 0
-! !     DO j = 1,ny-2
-! !         left_sum = left_sum + dy*uf(1,j)
-! !         right_sum = right_sum + dy*uf(nx-1,j) 
-! !     END DO
+    left_sum = 0
+    left_sum = 0
+    DO j = 1,ny-2
+        left_sum = left_sum + dy*uf(1,j)
+        right_sum = right_sum + dy*uf(nx-1,j) 
+    END DO
 
-! !     mass_error = left_sum - right_sum
-! !     mass_error = mass_error/ly
+    mass_error = left_sum - right_sum
+    mass_error = mass_error/ly
 
-! !     uf(nx-1,:) = uf(nx-1,:) + mass_error
-! ! END SUBROUTINE
+    DO j = 1,ny-2
+        uf(nx-1,j) = uf(nx-1,j) + mass_error
+    END DO
+    
+END SUBROUTINE
 
-! ! SUBROUTINE calc_residual(mat_old, mat_new, res, nx, ny)
-! !     integer, intent(in) :: nx, ny
-! !     real ,dimension(nx,ny), intent(in) :: mat_old, mat_new 
-! !     real, intent(inout) :: res 
-! !     real :: sum_new, sum_old, total
+SUBROUTINE calc_residual(mat_old, mat_new, res, nx, ny)
+    integer, intent(in) :: nx, ny
+    real ,dimension(nx,ny), intent(in) :: mat_old, mat_new 
+    real, intent(inout) :: res 
+    real :: sum_new, sum_old, total
 
-! !     sum_new = 0
-! !     sum_old = 0  
+    sum_new = 0
+    sum_old = 0  
 
-! !     total = (nx-2)*(ny-2)
-! !     do j = 2,ny-1
-! !         do i = 2,nx-1
-! !             sum_new = sum_new + mat_new(i,j)
-! !             sum_old = sum_old + mat_old(i,j)
-! !         end do
-! !     end do
+    total = (nx-2)*(ny-2)
+    do j = 2,ny-1
+        do i = 2,nx-1
+            sum_new = sum_new + mat_new(i,j)
+            sum_old = sum_old + mat_old(i,j)
+        end do
+    end do
 
-! !     sum_new = abs(sum_new/total )
-! !     sum_old = abs(sum_old/total)
+    sum_new = abs(sum_new/total )
+    sum_old = abs(sum_old/total)
 
-! !     res = abs(sum_new - sum_old)
-! ! END SUBROUTINE
+    res = abs(sum_new - sum_old)
+END SUBROUTINE

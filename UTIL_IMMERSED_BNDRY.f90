@@ -1,10 +1,3 @@
-MODULE immersed_boundary
-    REAL :: a, b
-    REAL :: xcent, ycent
-    INTEGER :: ncinside, shape
-    REAL, ALLOCATABLE, DIMENSION(:,:) :: iblank_cc, iblank_fcv, iblank_fcu, ghost
-END MODULE immersed_boundary
-
 SUBROUTINE read_body()
     use immersed_boundary
 
@@ -98,8 +91,6 @@ SUBROUTINE calc_ghost()
             END IF
         END DO 
     END DO
-
-
 END SUBROUTINE
 
     
