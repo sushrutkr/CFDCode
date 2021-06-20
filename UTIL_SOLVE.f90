@@ -315,3 +315,7 @@ SUBROUTINE calc_residual(mat_old, mat_new, res, nx, ny)
 
     res = abs(sum_new - sum_old)
 END SUBROUTINE
+
+SUBROUTINE calc_poisson_residual()
+    
+END SUBROUTINE
