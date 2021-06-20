@@ -1,3 +1,0 @@
-SUBROUTINE calc_drag
-
-END SUBROUTINE
