@@ -315,3 +315,28 @@ SUBROUTINE calc_residual(mat_old, mat_new, res, nx, ny)
 
     res = abs(sum_new - sum_old)
 END SUBROUTINE
+
+SUBROUTINE calc_poisson_residual()
+    use global_variables
+    use immersed_boundary
+    real, dimension(nx,ny) :: errormat
+    real :: errorsum
+    errormat = 0
+
+    do j = 2,ny-1
+        do i = 2,nx-1
+            errormat(i,j) = ((p(i+1,j) -2*p(i,j) + p(i-1,j))/(dx**2)) + ((p(i,j+1) -2*p(i,j) + p(i,j-1))/(dy**2))
+            errormat(i,j) = errormat(i,j) - ((1/dt)*(((uf(i,j-1) - uf(i-1,j-1))/dx) + ((vf(i-1,j) - vf(i-1,j-1))/dy)))
+        end do 
+    end do
+
+    errorsum = 0
+
+    do j = 2,ny-1
+        do i = 2,nx-1
+            errorsum = errorsum + errormat(i,j) 
+        end do
+    end do
+    
+    errorppe = (errorsum)/((nx-2)*(nx-2))
+END SUBROUTINE
