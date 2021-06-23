@@ -23,3 +23,8 @@ MODULE immersed_boundary
     INTEGER :: ncinside, shape
     REAL, ALLOCATABLE, DIMENSION(:,:) :: iblank_cc, iblank_fcv, iblank_fcu, ghost
 END MODULE immersed_boundary
+
+MODULE STATS
+    REAL :: force_drag, coeff_drag
+    REAL, ALLOCATABLE, DIMENSION(:,:) :: p_coeff_drag
+END MODULE
