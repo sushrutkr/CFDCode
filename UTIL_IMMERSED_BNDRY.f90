@@ -23,11 +23,21 @@ SUBROUTINE calc_in_cells()
     iblank_fcv = 1
 
     ncinside = 0 
+    
+    SELECT CASE(shape)
 
-    IF (shape .EQ. 1) THEN
+    case(0)
+        write(11,*) 'No Body Added'
+        iblank_fcu = 1
+        iblank_fcv = 1
+        iblank_cc = 1
+
+    case(1)
+        write(11,*) 'Circle added with radius = ', radius
         DO j = 1,ny
             DO i = 1,nx
-                IF (((x(i) - xcent)**2/a**2 + (y(j) - ycent)**2/b**2) .LE. 1) THEN
+                ! I am not dumb to not use same equation for circle or ellipse it's there to reduce chances of error
+                IF (((x(i) - xcent)**2 + (y(j) - ycent)**2) .LE. radius**2) THEN
                     iblank_cc(i,j) = 0
                     iblank_fcu(i,j-1) = 0
                     iblank_fcu(i-1,j-1) = 0
@@ -38,7 +48,8 @@ SUBROUTINE calc_in_cells()
             END DO
         END DO
 
-    ELSE IF(shape .EQ. 2) THEN
+    case(2)
+        write(11,*) 'Square added with hardcoded parameters'
         DO j = 1,ny
             DO i = 1,nx
                 IF (x(i) > 2.5 .AND. x(i)<3.5) THEN
@@ -49,21 +60,29 @@ SUBROUTINE calc_in_cells()
                         iblank_fcv(i-1,j) = 0
                         iblank_fcv(i-1,j-1) = 0
                         ncinside = ncinside + 1
-                    END IF 
+                    END IF
                 END IF
             END DO
         END DO
-    
-    ELSE 
-        iblank_fcu = 1
-        iblank_fcv = 1
-        iblank_cc = 1
 
-        ! iblank_cc(5,5) = 0
-        ! iblank_fcu(4,4) = 0
-        ! iblank_fcu(5,4) = 0
-        ! iblank_
-    END IF     
+
+    case(3)
+        write(11,*) 'Ellipse added with major axis length = ', major, ' & minor axis length = ', minor
+        DO j = 1,ny
+            DO i = 1,nx
+                IF ((((x(i)-xcent)*cos(aoa) - (y(j)-ycent)*sin(aoa))**2/major**2 &
+                    +((x(i)-xcent)*sin(aoa) + (y(j)-ycent)*cos(aoa))**2/minor**2) .LE. 1) THEN
+                    iblank_cc(i,j) = 0
+                    iblank_fcu(i,j-1) = 0
+                    iblank_fcu(i-1,j-1) = 0
+                    iblank_fcv(i-1,j) = 0
+                    iblank_fcv(i-1,j-1) = 0
+                    ncinside = ncinside + 1
+                END IF
+            END DO
+        END DO
+
+    end select     
 
     CALL calc_ghost()
 END SUBROUTINE
