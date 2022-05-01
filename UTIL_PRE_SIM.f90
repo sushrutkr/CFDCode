@@ -36,7 +36,6 @@ END SUBROUTINE
 
 SUBROUTINE domain_init()
     USE global_variables
-    REAL :: dxc, dyc
     dxc = lx/(nx-2)
     dyc = ly/(ny-2)
 

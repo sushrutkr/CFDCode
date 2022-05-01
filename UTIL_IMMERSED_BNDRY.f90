@@ -33,11 +33,11 @@ SUBROUTINE calc_in_cells()
         iblank_cc = 1
 
     case(1)
-        write(11,*) 'Circle added with radius = ', radius
+        write(11,*) 'Circle added with radius = ', a
         DO j = 1,ny
             DO i = 1,nx
                 ! I am not dumb to not use same equation for circle or ellipse it's there to reduce chances of error
-                IF (((x(i) - xcent)**2 + (y(j) - ycent)**2) .LE. radius**2) THEN
+                IF (((x(i) - xcent)**2 + (y(j) - ycent)**2) .LE. a**2) THEN
                     iblank_cc(i,j) = 0
                     iblank_fcu(i,j-1) = 0
                     iblank_fcu(i-1,j-1) = 0

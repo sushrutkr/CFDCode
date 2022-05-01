@@ -75,7 +75,6 @@ program CFDCode
         CALL calc_drag
 
         write(14,*) t, force_drag, coeff_drag
-        !print *, errorppe
         t = t+dt
     END DO
 

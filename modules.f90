@@ -7,6 +7,7 @@ MODULE global_variables
     REAL :: cflx, cfly, rx, ry, AAD, BAD, APPE, BPPE
     REAL :: x0, y0, r0, r, vt
     REAL :: start, finish
+    REAL :: dxc, dyc
     REAL, ALLOCATABLE, DIMENSION(:) :: x, y, bx, un, ukx, bcx, by, vn, vky, bcy, bp
     REAL, ALLOCATABLE, DIMENSION(:,:) :: u, v, uk, vk, ukp1, vkp1, vor, p, pk, uf, vf,velmag
 END MODULE global_variables
