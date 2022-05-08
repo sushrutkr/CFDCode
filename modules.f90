@@ -1,15 +1,17 @@
 MODULE global_variables
-    INTEGER:: i,j,i2d,iter,nx,ny,AD_itermax,PPE_itermax,solvetype_ppe,solvetype_AD,iterx,itery
+    INTEGER:: i,j,i2d,iter,AD_itermax,PPE_itermax,solvetype_ppe,solvetype_AD,iterx,itery
+    INTEGER :: nx,ny,nxf,nyf
     INTEGER :: restart, re_time, write_inter, write_flag
     REAL :: errorx, errory, errorppe, errormax
-    REAL :: dx, dy, lx, ly
+    REAL :: lx, ly
     REAL :: w_AD, w_PPE, tmax, dt, t, Re, mu
     REAL :: cflx, cfly, rx, ry, AAD, BAD, APPE, BPPE
     REAL :: x0, y0, r0, r, vt
     REAL :: start, finish
-    REAL :: dxc, dyc
-    REAL, ALLOCATABLE, DIMENSION(:) :: x, y, bx, un, ukx, bcx, by, vn, vky, bcy, bp
+    REAL, ALLOCATABLE, DIMENSION(:) :: x, y, xf, yf
+    REAL, ALLOCATABLE, DIMENSION(:) :: bx, un, ukx, bcx, by, vn, vky, bcy, bp
     REAL, ALLOCATABLE, DIMENSION(:,:) :: u, v, uk, vk, ukp1, vkp1, vor, p, pk, uf, vf,velmag
+    REAL, ALLOCATABLE, DIMENSION(:,:) :: dx, dy    
 END MODULE global_variables
 
 MODULE boundary_conditions
@@ -29,3 +31,7 @@ MODULE STATS
     REAL :: force_drag, coeff_drag
     REAL, ALLOCATABLE, DIMENSION(:,:) :: p_coeff_drag
 END MODULE
+
+module files 
+    integer, parameter :: x_face = 31, y_face = 32, gridfile = 33
+end module

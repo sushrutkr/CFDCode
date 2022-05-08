@@ -30,25 +30,82 @@ SUBROUTINE readdata()
 
     ! nx = nx + 2
     ! ny = ny + 2
-    dx = lx/(nx)
-    dy = ly/(ny)
+    ! dx = lx/(nx) !!!!!!!!!!! TO BE COMMENTED LATER ON
+    ! dy = ly/(ny)
+    nxf = nx + 1
+    nyf = ny + 1
+    nx = nx + 2
+    ny = ny + 2
 END SUBROUTINE
 
 SUBROUTINE domain_init()
     USE global_variables
-    dxc = lx/(nx-2)
-    dyc = ly/(ny-2)
+    use files
 
-    x(1) = -dxc/2
-    y(1) = -dyc/2
+    real :: dummy
+
     
-    DO i = 2,nx
-        x(i) = x(i-1) + dxc
+    ! dxc = lx/(nx-2)
+    ! dyc = ly/(ny-2)
+    
+    ! Reading Face Coordinates
+    open(x_face, file='xgrid.dat', status='old')
+    do i = 1, nxf
+        read(x_face,*) dummy, xf(i)
+    enddo
+    close(x_face)
+
+    open(y_face, file='ygrid.dat', status='old')
+    do i = 1, nyf
+        read(y_face,*) dummy, yf(i)
+    enddo
+    close(y_face)
+
+    ! Setting up the cell centers
+    DO i = 2,nx-1
+        x(i) = (xf(i-1)+xf(i))/2.0 
     END DO
     
-    DO j = 2,ny
-        y(j) = y(j-1) + dyc
+    DO j = 2,ny-1
+        y(j) = (yf(j-1)+yf(j))/2.0
     END DO
+
+
+    x(1) = -x(2)
+    y(1) = -y(2)
+    x(nx) = xf(nxf) + (xf(nxf) - x(nx-1)) 
+    y(ny) = yf(nyf) + (yf(nyf) - y(ny-1))
+    
+
+    do j=2,ny-1
+        do i=2,nx-1
+            dx(i,j) = xf(i) - xf(i-1)
+            dy(i,j) = yf(j) - yf(j-1)
+        enddo
+    enddo
+    dx(1,:) = dx(2,:)
+    dx(nx,:) = dx(nx-1,:)
+    dx(:,1) = dx(:,2)
+    dx(:,ny) = dx(:,ny-1)
+
+    dy(1,:) = dy(2,:)
+    dy(nx,:) = dy(nx-1,:)
+    dy(:,1) = dy(:,2)
+    dy(:,ny) = dy(:,ny-1)
+
+    open(gridfile, file='grid.dat', status='unknown')
+    write(*,*) 'Writing Grid Data'
+    WRITE(gridfile,*) 'TITLE = "Post Processing Tecplot"'
+    WRITE(gridfile,*) 'VARIABLES = "X", "Y", "dxi", "dyi"'
+    WRITE(gridfile,*) 'ZONE T="BIG ZONE", I=',nx,', J=',ny,', DATAPACKING=POINT'
+
+    do j=1,ny
+        do i=1,nx
+            WRITE(gridfile,*) i,j,dx(i,j),dy(i,j)
+        enddo
+    enddo
+    close(gridfile)
+
 END SUBROUTINE
 
 SUBROUTINE flow_init()

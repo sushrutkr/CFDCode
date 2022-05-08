@@ -14,19 +14,21 @@ program CFDCode
     open(11, file='log.dat', status='unknown')
     write(11,*) " CODE BEGUN.........................."
     write(11,*)
-    write(11,*) " Simulation Parameters are nx, ny, dx, dy, w, errormax,tmax, dt, Re "
-    write(11,*) nx, ny, dx, dy, w_PPE, errormax,tmax, dt, Re
+    write(11,*) " Simulation Parameters are nx, ny, w, errormax,tmax, dt, Re "
+    write(11,*) nx, ny,w_PPE, errormax,tmax, dt, Re
     write(11,*)
     write(11,*) "Initialising the domain .........................."
     write(11,*)  
     allocate(iblank_cc(nx,ny), ghost(nx,ny), iblank_fcu(nx,ny-2), iblank_fcv(nx-2,ny))
-    allocate(x(nx), y(ny))
+    allocate(x(nx), y(ny), xf(nxf), yf(nyf), dx(nx,ny), dy(nx,ny))
     allocate(u(nx,ny), uk(nx,ny), ukp1(nx,ny)) 
     allocate(v(nx,ny), vk(nx,ny), vkp1(nx,ny)) 
     allocate(p(nx,ny), pk(nx,ny), uf(nx,ny-2), vf(nx-2,ny), bp(nx-2))
     allocate(vor(nx,ny), velmag(nx,ny))
     allocate(bx(nx-2), by(nx-2), un(nx-2), vn(nx-2), ukx(nx-2), vky(nx-2), bcx(nx-2), bcy(nx-2))
     allocate(p_coeff_drag(nx,ny))
+    ! allocate(coeff_ad(nx,ny), coeff_ppe(nx,ny))
+
 
     open(14, file="drag_history.dat", status='unknown')
     write(14,*) " Drag around the body"
@@ -35,11 +37,6 @@ program CFDCode
     write(14,*) 
     
     ! Defining Coefficient for [A]x=b   
-    AAD = 1 + ((2*dt)/(Re*(dx**2)))
-    BAD = -dt/(Re*(dx**2))
-
-    APPE = -2/(dx**2)
-    BPPE = 1/(dx**2)
 
     CALL domain_init()   
     CALL calc_in_cells()

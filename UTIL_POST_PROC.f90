@@ -46,11 +46,11 @@ subroutine writepostproc()
 
 
     vor = 0
-    DO j=2,ny-1
-        DO i = 2,nx-1
-            vor(i,j) = ((v(i+1,j) - v(i-1,j))/(2*dx)) - ((u(i,j+1) - u(i,j-1))/(2*dy)) 
-        END DO
-    END DO
+    ! DO j=2,ny-1
+    !     DO i = 2,nx-1
+    !         vor(i,j) = ((v(i+1,j) - v(i-1,j))/(2*dx)) - ((u(i,j+1) - u(i,j-1))/(2*dy)) 
+    !     END DO
+    ! END DO
 
     DO j=1,ny
         DO i = 1,nx
@@ -60,7 +60,7 @@ subroutine writepostproc()
         
     !Writing Files For Post Processing
     ext = '.dat'
-    fname = 'data.'
+    fname = 'Data/data.'
     write(no, "(I7.7)") iter/1000
     fname = TRIM(ADJUSTL(fname))//no
     fname = TRIM(ADJUSTL(fname))//TRIM(ADJUSTL(ext))
@@ -82,14 +82,14 @@ SUBROUTINE data_write()
     use immersed_boundary
     character(len=50) :: fname, no, ext
     vor = 0
-    DO j=2,ny-1
-        DO i = 2,nx-1
-            vor(i,j) = ((v(i+1,j) - v(i-1,j))/(2*dx)) - ((u(i,j+1) - u(i,j-1))/(2*dy)) 
-        END DO
-    END DO
+    ! DO j=2,ny-1
+    !     DO i = 2,nx-1
+    !         vor(i,j) = ((v(i+1,j) - v(i-1,j))/(2*dx)) - ((u(i,j+1) - u(i,j-1))/(2*dy)) 
+    !     END DO
+    ! END DO
 
     ext = '.dat'
-    fname = 'data.'
+    fname = 'Data/data.'
     write(no, "(I7.7)") write_flag/1000
     fname = TRIM(ADJUSTL(fname))//no
     fname = TRIM(ADJUSTL(fname))//TRIM(ADJUSTL(ext))

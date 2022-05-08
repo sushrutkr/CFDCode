@@ -2,12 +2,13 @@ subroutine ADSolver()
     use global_variables
     use immersed_boundary
     use ieee_arithmetic
+    use files
 
     REAL, DIMENSION(2) :: err
     REAL, DIMENSION(nx,ny) :: sx, sy 
     real, dimension(nx-2) :: d
-    real,dimension(nx-3) :: l,upp
-    real :: coeff
+    real, dimension(nx-3) :: l,upp
+    REAL, DIMENSION(nx,ny) :: coeff_ad, coeff_dy2_p1, coeff_dx2_p1, coeff_dy2_m1, coeff_dx2_m1
 
     !CALL set_SSM_bc()
     error = 1
@@ -29,11 +30,17 @@ subroutine ADSolver()
             !                   - (dt/(2*dy))*(v(i,j+1)*vf(i-1,j+1) - v(i,j-1)*vf(i-1,j-1)))
 
             ! Method B
-            sx(i,j) = (u(i,j) - (dt/(dx))*(0.5*(u(i+1,j) + u(i,j))*uf(i,j-1) - 0.5*(u(i,j) + u(i-1,j))*uf(i-1,j-1)) &
-                              - (dt/(dy))*(0.5*(u(i,j+1) + u(i,j))*vf(i-1,j) - 0.5*(u(i,j) + u(i,j-1))*vf(i-1,j-1)))
+            sx(i,j) = (u(i,j) - (dt/dx(i,j))*(((1/(dx(i,j) + dx(i+1,j)))*(u(i+1,j)*dx(i,j) + u(i,j)*dx(i+1,j))*uf(i,j-1)) &
+                                             -((1/(dx(i,j) + dx(i-1,j)))*(u(i,j)*dx(i-1,j) + u(i-1,j)*dx(i,j))*uf(i-1,j-1))) &
+                              - (dt/dy(i,j))*(((1/(dy(i,j) + dy(i,j+1)))*(u(i,j+1)*dy(i,j) + u(i,j)*dy(i,j+1))*vf(i-1,j)) &
+                                             -((1/(dy(i,j) + dy(i,j-1)))*(u(i,j)*dy(i,j-1) + u(i,j-1)*dy(i,j))*vf(i-1,j-1))))
 
-            sy(i,j) = (v(i,j) - (dt/(dx))*(0.5*(v(i+1,j) + v(i,j))*uf(i,j-1) - 0.5*(v(i,j) + v(i-1,j))*uf(i-1,j-1)) &
-                              - (dt/(dy))*(0.5*(v(i,j+1) + v(i,j))*vf(i-1,j) - 0.5*(v(i,j) + v(i,j-1))*vf(i-1,j-1))) 
+            sy(i,j) = (v(i,j) - (dt/dx(i,j))*(((1/(dx(i,j) + dx(i+1,j)))*(v(i+1,j)*dx(i,j) + v(i,j)*dx(i+1,j))*uf(i,j-1)) &
+                                             -((1/(dx(i,j) + dx(i-1,j)))*(v(i,j)*dx(i-1,j) + v(i-1,j)*dx(i,j))*uf(i-1,j-1))) &
+                              - (dt/dy(i,j))*(((1/(dy(i,j) + dy(i,j+1)))*(v(i,j+1)*dy(i,j) + v(i,j)*dy(i,j+1))*vf(i-1,j)) &
+                                             -((1/(dy(i,j) + dy(i,j-1)))*(v(i,j)*dy(i,j-1) + v(i,j-1)*dy(i,j))*vf(i-1,j-1))))
+            ! sy(i,j) = (v(i,j) - (dt/(dx))*(0.5*(v(i+1,j) + v(i,j))*uf(i,j-1) - 0.5*(v(i,j) + v(i-1,j))*uf(i-1,j-1)) &
+            !                   - (dt/(dy))*(0.5*(v(i,j+1) + v(i,j))*vf(i-1,j) - 0.5*(v(i,j) + v(i,j-1))*vf(i-1,j-1))) 
 
             !Method C
             ! sx(i,j) = u(i,j) - (dt/(2*dx))*(u(i+1,j)*(uf(i+1,j-1) + uf(i,j-1))*0.5 - u(i-1,j)*(uf(i-1,j-1) + uf(i,j-1))*0.5) &
@@ -50,8 +57,50 @@ subroutine ADSolver()
             !                  - (dt/(2*dy))*(v(i,j+1) - v(i,j-1))*(0.5*(vf(i-1,j+1) + vf(i-1,j-1)))       
         END DO
     END DO
+    ! open(13, file='source_term.dat', status='unknown')
+    ! WRITE(13,*) 'TITLE = "Post Processing Tecplot"'
+    ! WRITE(13,*) 'VARIABLES = "X", "Y", "U", "V", "Sx","Sy"' !"Vorticity", "iblank", "Ghost", "Velocity Magnitude"'
+    ! WRITE(13,*) 'ZONE T="BIG ZONE", I=',nx,', J=',ny,', DATAPACKING=POINT'
     
-    coeff = 1 + ((2*dt)/(Re*(dx**2))) + ((2*dt)/(Re*(dy**2)))
+    ! DO j=1,ny
+    !     DO i = 1,nx
+    !         WRITE(13,*) i, j, U(i,j), V(i,j), sx(i,j), sx(i,j)!, vor(i,j), iblank_cc(i,j), ghost(i,j), SQRT(u(i,j)**2 + v(i,j)**2)
+    !     END DO
+    ! END DO
+    ! close(13)
+
+    ! coeff = 1 + ((2*dt)/(Re*(dx**2))) + ((2*dt)/(Re*(dy**2)))
+    coeff_ad = 1
+    coeff_dx2_m1 = 1
+    coeff_dx2_p1 = 1 
+    coeff_dy2_m1 = 1 
+    coeff_dy2_p1 = 1
+    
+    do j = 2,ny-1
+        do i=2,nx-1
+            coeff_ad(i,j) = 1 + (dt/Re)*((2/(dx(i,j)*(dx(i,j) + dx(i+1,j)))) + (2/(dx(i,j)*(dx(i,j) + dx(i-1,j))))) &
+                              + (dt/Re)*((2/(dy(i,j)*(dy(i,j) + dy(i,j+1)))) + (2/(dy(i,j)*(dy(i,j) + dy(i,j-1)))))
+
+            coeff_dx2_m1(i,j) = (dt/Re)*(2/(dx(i,j)*(dx(i,j) + dx(i-1,j))))
+            coeff_dx2_p1(i,j) = (dt/Re)*(2/(dx(i,j)*(dx(i,j) + dx(i+1,j))))
+            coeff_dy2_m1(i,j) = (dt/Re)*(2/(dy(i,j)*(dy(i,j) + dy(i,j-1))))
+            coeff_dy2_p1(i,j) = (dt/Re)*(2/(dy(i,j)*(dy(i,j) + dy(i,j+1))))
+        enddo
+    enddo
+
+    ! open(gridfile, file='coeff_ad.dat', status='unknown')
+    ! WRITE(gridfile,*) 'TITLE = "Post Processing Tecplot"'
+    ! WRITE(gridfile,*) 'VARIABLES = "X", "Y", "coeff", "coeff_dx2_m1", "coeff_dx2_p1", "coeff_dy2_m1", "coeff_dy2_p1"'
+    ! WRITE(gridfile,*) 'ZONE T="BIG ZONE", I=',nx,', J=',ny,', DATAPACKING=POINT'
+
+    ! do j=1,ny
+    !     do i=1,nx
+    !         WRITE(gridfile,*) i,j,coeff_ad(i,j), coeff_dx2_m1(i,j), coeff_dx2_p1(i,j), coeff_dy2_m1(i,j), coeff_dy2_p1(i,j)
+    !     enddo
+    ! enddo
+    ! close(gridfile)
+    
+    
     iter = 0
     ! CALL set_velocity_BC()
     SELECT CASE(solvetype_AD)
@@ -60,14 +109,14 @@ subroutine ADSolver()
                 !CALL set_velocity_BC()
                 DO j = 2,ny-1
                     DO i =2,nx-1
-                        ukp1(i,j) = sx(i,j) + (dt/(Re*(dx**2)))*(ukp1(i+1,j) + ukp1(i-1,j)) &
-                                            + (dt/(Re*(dy**2)))*(ukp1(i,j+1) + ukp1(i,j-1))
-                        ukp1(i,j) = (iblank_cc(i,j)*ukp1(i,j))/coeff !
+                        ukp1(i,j) = sx(i,j) + (coeff_dx2_p1(i,j)*ukp1(i+1,j) + coeff_dx2_m1(i,j)*ukp1(i-1,j)) &
+                                            + (coeff_dy2_p1(i,j)*ukp1(i,j+1) + coeff_dy2_m1(i,j)*ukp1(i,j-1))
+                        ukp1(i,j) = (iblank_cc(i,j)*ukp1(i,j))/coeff_ad(i,j) !
                         ukp1(i,j) = (1-w_AD)*uk(i,j) + w_AD*ukp1(i,j)
 
-                        vkp1(i,j) = sy(i,j) + (dt/(Re*(dx**2)))*(vkp1(i+1,j) + vkp1(i-1,j)) &
-                                            + (dt/(Re*(dy**2)))*(vkp1(i,j+1) + vkp1(i,j-1))
-                        vkp1(i,j) = (iblank_cc(i,j)*vkp1(i,j))/coeff !
+                        vkp1(i,j) = sy(i,j) + (coeff_dx2_p1(i,j)*vkp1(i+1,j) + coeff_dx2_m1(i,j)*vkp1(i-1,j)) &
+                                            + (coeff_dy2_p1(i,j)*vkp1(i,j+1) + coeff_dy2_m1(i,j)*vkp1(i,j-1))
+                        vkp1(i,j) = (iblank_cc(i,j)*vkp1(i,j))/coeff_ad(i,j) !
                         vkp1(i,j) = (1-w_AD)*vk(i,j) + w_AD*vkp1(i,j)            
                     END DO
                 END DO
@@ -94,76 +143,90 @@ subroutine ADSolver()
             !print *, solvetype_AD, 'AD', error, 'error', t
 
         CASE(2)
-            DO WHILE(error>errormax)
-                DO j=2,ny-1
-                    ! x-Advection Difussion Iterations 
-                    un = 0
-                    ukx = 0
-                    bx = 0 
-                    bcx = 0
+            ! DO WHILE(error>errormax)
+            !     DO j=2,ny-1
+            !         ! x-Advection Difussion Iterations 
+            !         un = 0
+            !         ukx = 0
+            !         bx = 0 
+            !         bcx = 0
 
-                    DO i=1,nx-2
-                        i2d = i+1
-                        un(i) = sx(i2d,j)
-                        ukx(i) = (dt/(Re*(dy**2)))*(ukp1(i2d,j+1) - 2*ukp1(i2d,j) + ukp1(i2d,j-1))
-                    END DO
+            !         DO i=1,nx-2
+            !             i2d = i+1
+            !             un(i) = sx(i2d,j)
+            !             ukx(i) = (dt/(Re*(dy**2)))*(ukp1(i2d,j+1) - 2*ukp1(i2d,j) + ukp1(i2d,j-1))
+            !         END DO
 
-                    bcx(1) = -BAD*u(1,j) 
-                    bcx(nx-2) = -BAD*u(nx,j)
-                    bx = un + ukx + bcx
+            !         bcx(1) = -BAD*u(1,j) 
+            !         bcx(nx-2) = -BAD*u(nx,j)
+            !         bx = un + ukx + bcx
                     
-                    d(:) = AAD 
-                    l(:) = BAD 
-                    upp(:) = BAD
-                    CALL TDMA_vary(nx, bx, d, l, upp)
+            !         d(:) = AAD 
+            !         l(:) = BAD 
+            !         upp(:) = BAD
+            !         CALL TDMA_vary(nx, bx, d, l, upp)
                     
-                    ukp1(2:nx-1,j) = bx(:)
-                    ukp1(:,j) = uk(:,j)*(1-w_AD) + w_AD*ukp1(:,j)
+            !         ukp1(2:nx-1,j) = bx(:)
+            !         ukp1(:,j) = uk(:,j)*(1-w_AD) + w_AD*ukp1(:,j)
                     
-                    ! y-Advection Difussion Iterations
-                    vn = 0
-                    vky = 0
-                    by = 0 
-                    bcy = 0
+            !         ! y-Advection Difussion Iterations
+            !         vn = 0
+            !         vky = 0
+            !         by = 0 
+            !         bcy = 0
 
-                    DO i=1,nx-2
-                        i2d = i+1
-                        vn(i) = sy(i2d,j)
-                        vky(i) = (dt/(Re*(dy**2)))*(vkp1(i2d,j+1) - 2*vkp1(i2d,j) + vkp1(i2d,j-1))
-                    END DO
+            !         DO i=1,nx-2
+            !             i2d = i+1
+            !             vn(i) = sy(i2d,j)
+            !             vky(i) = (dt/(Re*(dy**2)))*(vkp1(i2d,j+1) - 2*vkp1(i2d,j) + vkp1(i2d,j-1))
+            !         END DO
 
-                    bcy(1) = -BAD*v(1,j) 
-                    bcy(nx-2) = -BAD*v(nx, j)
-                    by = vn + vky + bcy
+            !         bcy(1) = -BAD*v(1,j) 
+            !         bcy(nx-2) = -BAD*v(nx, j)
+            !         by = vn + vky + bcy
 
-                    d(:) = AAD 
-                    l(:) = BAD 
-                    upp(:) = BAD
-                    CALL TDMA_vary(nx, by, d, l, upp)
+            !         d(:) = AAD 
+            !         l(:) = BAD 
+            !         upp(:) = BAD
+            !         CALL TDMA_vary(nx, by, d, l, upp)
                     
-                    vkp1(2:nx-1,j) = by(:)
-                    vkp1(:,j) = vk(:,j)*(1-w_AD) + w_AD*vkp1(:,j)                     
-                END DO
-                errorx = MAXVAL(ABS(ukp1) - ABS(uk))
-                uk(:,:) = ukp1(:,:)
-                errory = MAXVAL(ABS(vkp1) - ABS(vk))
-                vk(:,:) = vkp1(:,:)
-                err(1) = errorx
-                err(2) = errory
-                error = MAXVAL(err) 
-            END DO    
+            !         vkp1(2:nx-1,j) = by(:)
+            !         vkp1(:,j) = vk(:,j)*(1-w_AD) + w_AD*vkp1(:,j)                     
+            !     END DO
+            !     errorx = MAXVAL(ABS(ukp1) - ABS(uk))
+            !     uk(:,:) = ukp1(:,:)
+            !     errory = MAXVAL(ABS(vkp1) - ABS(vk))
+            !     vk(:,:) = vkp1(:,:)
+            !     err(1) = errorx
+            !     err(2) = errory
+            !     error = MAXVAL(err) 
+            ! END DO    
     END SELECT 
     
     u(:,:) = ukp1(:,:)
     v(:,:) = vkp1(:,:)
+
+    ! open(13, file="AFTER_AD_SOLVE.dat", status='unknown')
+    ! WRITE(13,*) 'TITLE = "Post Processing Tecplot"'
+    ! WRITE(13,*) 'VARIABLES = "X", "Y", "U", "V", "P",' !"Vorticity", "iblank", "Ghost", "Velocity Magnitude"'
+    ! WRITE(13,*) 'ZONE T="BIG ZONE", I=',nx,', J=',ny,', DATAPACKING=POINT'
+    
+    ! DO j=1,ny
+    !     DO i = 1,nx
+    !         WRITE(13,*) i, j, U(i,j), V(i,j), P(i,j)!, vor(i,j), iblank_cc(i,j), ghost(i,j), SQRT(u(i,j)**2 + v(i,j)**2)
+    !     END DO
+    ! END DO
+    ! close(13)
 end subroutine
 
 subroutine PPESolver()
     use global_variables
     use immersed_boundary
     use ieee_arithmetic
+    use files
     REAL, DIMENSION(nx,ny) :: ps, pkp1
-    REAL :: coeff, coeff_abs, factor, f1, f2, dx2, dy2
+    REAL :: factor, f1, f2
+    REAL, DIMENSION(nx,ny) :: coeff_ppe, coeff_dy2_p1, coeff_dx2_p1, coeff_dy2_m1, coeff_dx2_m1
     
     ps = 0
     pkp1 = p
@@ -173,13 +236,13 @@ subroutine PPESolver()
     ! Calculating face velocities 
     DO j=1,ny-2
         DO i=2,nx-1
-            uf(i,j) = iblank_fcu(i,j)*(u(i+1,j+1) + u(i,j+1))/2
+            uf(i,j) = iblank_fcu(i,j)*((1/(dx(i,j+1) + dx(i+1,j+1)))*(u(i+1,j+1)*dx(i,j+1) + u(i,j+1)*dx(i+1,j+1)))
         END DO
     END DO
 
     DO j = 2,ny-2
         DO i = 1,nx-2
-            vf(i,j) = iblank_fcv(i,j)*(v(i+1,j+1) + v(i+1,j))/2
+            vf(i,j) = iblank_fcv(i,j)*((1/(dy(i+1,j+1) + dy(i+1,j)))*(v(i+1,j+1)*dy(i+1,j) + v(i+1,j)*dy(i+1,j+1)))
         END DO 
     END DO
 
@@ -187,17 +250,47 @@ subroutine PPESolver()
 
     DO j=2,ny-1
         DO i=2,nx-1
-            ps(i,j) = ((1/dt)*(((uf(i,j-1) - uf(i-1,j-1))/dx) + ((vf(i-1,j) - vf(i-1,j-1))/dy)))
+            ps(i,j) = ((1/dt)*(((uf(i,j-1) - uf(i-1,j-1))/dx(i,j)) + ((vf(i-1,j) - vf(i-1,j-1))/dy(i,j))))
         END DO 
     END DO
 
     ! uf(nx,:) = 2*u(nx,2:ny-1) - uf(nx-1,:)
     ! vf(:,ny) = 2*v(2:nx-1,ny) - vf(:,ny-1)
 
+
     iter = 0
-    coeff_abs = -((2/(dx**2)) + (2/(dy**2)))
-    dx2 = (1/(dx**2))
-    dy2 = (1/(dy**2))
+    ! coeff_abs = -((2/(dx**2)) + (2/(dy**2)))
+    ! dx2 = (1/(dx**2))
+    ! dy2 = (1/(dy**2))
+    coeff_ppe = 1
+    coeff_dx2_m1 = 1
+    coeff_dx2_p1 = 1 
+    coeff_dy2_m1 = 1 
+    coeff_dy2_p1 = 1
+
+    do j = 2,ny-1
+        do i=2,nx-1
+            coeff_ppe(i,j) = -1*(((2/(dx(i,j)*(dx(i,j) + dx(i+1,j)))) + (2/(dx(i,j)*(dx(i,j) + dx(i-1,j)))))&
+                                +((2/(dy(i,j)*(dy(i,j) + dy(i,j+1)))) + (2/(dy(i,j)*(dy(i,j) + dy(i,j-1))))))
+
+            coeff_dx2_m1(i,j) = (2/(dx(i,j)*(dx(i,j) + dx(i-1,j))))
+            coeff_dx2_p1(i,j) = (2/(dx(i,j)*(dx(i,j) + dx(i+1,j))))
+            coeff_dy2_m1(i,j) = (2/(dy(i,j)*(dy(i,j) + dy(i,j-1))))
+            coeff_dy2_p1(i,j) = (2/(dy(i,j)*(dy(i,j) + dy(i,j+1))))
+        enddo
+    enddo
+
+    ! open(gridfile, file='coeff_ppe.dat', status='unknown')
+    ! WRITE(gridfile,*) 'TITLE = "Post Processing Tecplot"'
+    ! WRITE(gridfile,*) 'VARIABLES = "X", "Y", "coeff", "coeff_dx2_m1", "coeff_dx2_p1", "coeff_dy2_m1", "coeff_dy2_p1"'
+    ! WRITE(gridfile,*) 'ZONE T="BIG ZONE", I=',nx,', J=',ny,', DATAPACKING=POINT'
+
+    ! do j=1,ny
+    !     do i=1,nx
+    !         WRITE(gridfile,*) i, j,coeff_ppe(i,j), coeff_dx2_m1(i,j), coeff_dx2_p1(i,j), coeff_dy2_m1(i,j), coeff_dy2_p1(i,j)
+    !     enddo
+    ! enddo
+    ! close(gridfile)
 
     CALL set_pressure_BC()
     DO WHILE(errorppe>errormax)
@@ -211,10 +304,13 @@ subroutine PPESolver()
                 !                 - ((iblank_cc(i,j+1)*p(i,j+1) + iblank_cc(i,j-1)*p(i,j-1))/(dy**2))
                 ! p(i,j) = iblank_cc(i,j)*p(i,j)/coeff
 
-                p(i,j) = ps(i,j)
-                p(i,j) = p(i,j) - ((p(i+1,j) + p(i-1,j))/(dx**2)) - ((p(i,j+1) + p(i,j-1))/(dy**2))
-                p(i,j) = iblank_cc(i,j)*p(i,j)/coeff_abs
+                ! p(i,j) = ps(i,j)
+                p(i,j) = ps(i,j) - (p(i+1,j)*coeff_dx2_p1(i,j) + p(i-1,j)*coeff_dx2_m1(i,j)) &
+                                 - (p(i,j+1)*coeff_dy2_p1(i,j) + p(i,j-1)*coeff_dy2_m1(i,j))
+
+                p(i,j) = iblank_cc(i,j)*p(i,j)/coeff_ppe(i,j)
                 p(i,j) = (1-w_PPE)*pk(i,j) + w_PPE*p(i,j)
+
                 pkp1(i,j) = p(i,j)
                 factor = ghost(i,j)*(iblank_cc(i,j-1) + iblank_cc(i,j+1) + iblank_cc(i-1,j) + iblank_cc(i+1,j)) &
                             + (1-ghost(i,j))
@@ -224,12 +320,12 @@ subroutine PPESolver()
                                                             + iblank_cc(i+1,j)*p(i+1,j))/factor)
                 p(i,j) =  f1 + f2 
 
-                ! if(ieee_is_nan(p(i,j))) then
-                !     print *, 'PPE Iter Nan', t, i, j, ghost(i,j), p(i,j), pkp1(i,j), &
-                !                          f1,f2, factor, p(i,j-1), p(i,j+1), p(i+1,j), p(i-1,j) !iblank_cc(i,j-1)*p(i,j-1),&
-                !                          !iblank_cc(i,j+1)*p(i,j+1), iblank_cc(i-1,j)*p(i-1,j),&
-                !                          !iblank_cc(i+1,j)*p(i+1,j)
-                ! end if
+                if(ieee_is_nan(p(i,j))) then
+                    print *, 'PPE Iter Nan', t, i, j, ghost(i,j), p(i,j), pkp1(i,j), &
+                                         f1,f2, factor, p(i,j-1), p(i,j+1), p(i+1,j), p(i-1,j) !iblank_cc(i,j-1)*p(i,j-1),&
+                                         !iblank_cc(i,j+1)*p(i,j+1), iblank_cc(i-1,j)*p(i-1,j),&
+                                         !iblank_cc(i+1,j)*p(i+1,j)
+                end if
             END DO
         END DO
         !errorppe = 0
@@ -245,6 +341,18 @@ subroutine PPESolver()
     END DO
     CALL set_pressure_BC()
     !print *, 'PPE', t, iter, coeff, coeff_abs
+
+    ! open(13, file="AFTER_PPE_SOLVE.dat", status='unknown')
+    ! WRITE(13,*) 'TITLE = "Post Processing Tecplot"'
+    ! WRITE(13,*) 'VARIABLES = "X", "Y", "U", "V", "P",' !"Vorticity", "iblank", "Ghost", "Velocity Magnitude"'
+    ! WRITE(13,*) 'ZONE T="BIG ZONE", I=',nx,', J=',ny,', DATAPACKING=POINT'
+    
+    ! DO j=1,ny
+    !     DO i = 1,nx
+    !         WRITE(13,*) i, j, U(i,j), V(i,j), P(i,j)!, vor(i,j), iblank_cc(i,j), ghost(i,j), SQRT(u(i,j)**2 + v(i,j)**2)
+    !     END DO
+    ! END DO
+    ! close(13)
 end subroutine
 
 subroutine vel_correct()
@@ -253,23 +361,35 @@ subroutine vel_correct()
     !Cell Center Velocity Correction
     DO j=2,ny-1
         DO i=2,nx-1
-            u(i,j) = iblank_cc(i,j)*(u(i,j) - (dt/(2*dx))*(p(i+1,j) - p(i-1,j)))
-            v(i,j) = iblank_cc(i,j)*(v(i,j) - (dt/(2*dy))*(p(i,j+1) - p(i,j-1)))
+            u(i,j) = iblank_cc(i,j)*(u(i,j) - ((2*dt)/(2*dx(i,j)+dx(i+1,j)+dx(i-1,j)))*(p(i+1,j) - p(i-1,j)))
+            v(i,j) = iblank_cc(i,j)*(v(i,j) - ((2*dt)/(2*dy(i,j)+dy(i,j+1)+dy(i,j-1)))*(p(i,j+1) - p(i,j-1)))
         END DO 
     END DO
 
     !Face Center Velocity Correction
     DO j=1,ny-2
         DO i=2,nx-1
-            uf(i,j) = iblank_fcu(i,j)*(uf(i,j) - (dt/dx)*(p(i+1,j+1) - p(i,j+1)))
+            uf(i,j) = iblank_fcu(i,j)*(uf(i,j) - ((2*dt)/(dx(i+1,j+1)+dx(i,j+1)))*(p(i+1,j+1) - p(i,j+1)))
         END DO
     END DO
 
     DO j = 2,ny-2
         DO i = 1,nx-2
-            vf(i,j) = iblank_fcv(i,j)*(vf(i,j) - (dt/dy)*(p(i+1,j+1) - p(i+1,j)))
+            vf(i,j) = iblank_fcv(i,j)*(vf(i,j) - ((2*dt)/(dy(i+1,j+1)+dy(i+1,j)))*(p(i+1,j+1) - p(i+1,j)))
         END DO 
     END DO
+
+    ! open(13, file="AFTER_VEL_CORRECT.dat", status='unknown')
+    ! WRITE(13,*) 'TITLE = "Post Processing Tecplot"'
+    ! WRITE(13,*) 'VARIABLES = "X", "Y", "U", "V", "P",' !"Vorticity", "iblank", "Ghost", "Velocity Magnitude"'
+    ! WRITE(13,*) 'ZONE T="BIG ZONE", I=',nx,', J=',ny,', DATAPACKING=POINT'
+    
+    ! DO j=1,ny
+    !     DO i = 1,nx
+    !         WRITE(13,*) i, j, U(i,j), V(i,j), P(i,j)!, vor(i,j), iblank_cc(i,j), ghost(i,j), SQRT(u(i,j)**2 + v(i,j)**2)
+    !     END DO
+    ! END DO
+    ! close(13)
 end subroutine
 
 SUBROUTINE mass_correct()
@@ -280,8 +400,8 @@ SUBROUTINE mass_correct()
     left_sum = 0
     left_sum = 0
     DO j = 1,ny-2
-        left_sum = left_sum + dy*uf(1,j)
-        right_sum = right_sum + dy*uf(nx-1,j) 
+        left_sum  = left_sum  + dy(2,j+1)*uf(1,j)
+        right_sum = right_sum + dy(2,j+1)*uf(nx-1,j) 
     END DO
 
     mass_error = left_sum - right_sum
@@ -321,12 +441,14 @@ SUBROUTINE calc_poisson_residual()
     use immersed_boundary
     real, dimension(nx,ny) :: errormat
     real :: errorsum
-    errormat = 0
+    errormat(:,:) = 0
 
     do j = 2,ny-1
         do i = 2,nx-1
-            errormat(i,j) = ((p(i+1,j) -2*p(i,j) + p(i-1,j))/(dx**2)) + ((p(i,j+1) -2*p(i,j) + p(i,j-1))/(dy**2))
-            errormat(i,j) = errormat(i,j) - ((1/dt)*(((uf(i,j-1) - uf(i-1,j-1))/dx) + ((vf(i-1,j) - vf(i-1,j-1))/dy)))
+            ! errormat(i,j) = ps(i,j) - ((p(i+1,j) -2*p(i,j) + p(i-1,j))/(dx**2)) + ((p(i,j+1) -2*p(i,j) + p(i,j-1))/(dy**2))
+
+            ! errormat(i,j) = ((p(i+1,j) -2*p(i,j) + p(i-1,j))/(dx**2)) + ((p(i,j+1) -2*p(i,j) + p(i,j-1))/(dy**2))
+            ! errormat(i,j) = errormat(i,j) - ((1/dt)*(((uf(i,j-1) - uf(i-1,j-1))/dx) + ((vf(i-1,j) - vf(i-1,j-1))/dy)))
         end do 
     end do
 

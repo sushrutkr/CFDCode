@@ -13,7 +13,7 @@ SUBROUTINE calc_drag()
     force_drag = 0
     do j=1,ny
         do i=1,nx
-            force_drag = force_drag + (dyc*p_coeff_drag(i,j))
+            force_drag = force_drag + (dy(i,j)*p_coeff_drag(i,j))
             !print *, force_drag
         end do
     end do

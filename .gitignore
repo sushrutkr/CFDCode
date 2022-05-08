@@ -2,3 +2,5 @@ data*
 *.mod
 drag_history.dat 
 log.dat 
+a.out
+Data/
