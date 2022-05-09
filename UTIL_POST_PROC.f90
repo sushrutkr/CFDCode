@@ -46,11 +46,14 @@ subroutine writepostproc()
 
 
     vor = 0
-    ! DO j=2,ny-1
-    !     DO i = 2,nx-1
-    !         vor(i,j) = ((v(i+1,j) - v(i-1,j))/(2*dx)) - ((u(i,j+1) - u(i,j-1))/(2*dy)) 
-    !     END DO
-    ! END DO
+    DO j=2,ny-1
+        DO i = 2,nx-1
+            vor(i,j) = iblank_cc(i,j)*((2/(2*dx(i,j)+dx(i+1,j)+dx(i-1,j)))*(v(i+1,j) - v(i-1,j)) &
+                                      -(2/(2*dy(i,j)+dy(i,j+1)+dy(i,j-1)))*(u(i,j+1) - u(i,j-1)))
+        END DO
+    END DO
+
+    vor(nx,:) = vor(nx-1,:)
 
     DO j=1,ny
         DO i = 1,nx
@@ -59,19 +62,14 @@ subroutine writepostproc()
     END DO
         
     !Writing Files For Post Processing
-    ext = '.dat'
-    fname = 'Data/data.'
-    write(no, "(I7.7)") iter/1000
-    fname = TRIM(ADJUSTL(fname))//no
-    fname = TRIM(ADJUSTL(fname))//TRIM(ADJUSTL(ext))
-    open(12, file='data.dat', status='unknown')
+    open(12, file='data_final.dat', status='unknown')
     WRITE(12,*) 'TITLE = "Post Processing Tecplot"'
-    WRITE(12,*) 'VARIABLES = "X", "Y", "U", "V","P","Velocity Magnitude",  "Vorticity", "iblank", "Ghost"'
+    WRITE(12,*) 'VARIABLES = "X", "Y", "U", "V","P","Vorticity", "iblank", "Ghost"'
     WRITE(12,*) 'ZONE T="BIG ZONE", I=',nx,', J=',ny,', DATAPACKING=POINT'
     
     DO j=1,ny
         DO i = 1,nx
-            WRITE(12,*) x(i), y(j), U(i,j), V(i,j),P(i,j), SQRT(u(i,j)**2 + v(i,j)**2) , vor(i,j), iblank_cc(i,j), ghost(i,j)
+            WRITE(12,*) x(i), y(j), U(i,j), V(i,j),P(i,j), vor(i,j), iblank_cc(i,j), ghost(i,j)
         END DO
     END DO
     close(12)
@@ -82,26 +80,29 @@ SUBROUTINE data_write()
     use immersed_boundary
     character(len=50) :: fname, no, ext
     vor = 0
-    ! DO j=2,ny-1
-    !     DO i = 2,nx-1
-    !         vor(i,j) = ((v(i+1,j) - v(i-1,j))/(2*dx)) - ((u(i,j+1) - u(i,j-1))/(2*dy)) 
-    !     END DO
-    ! END DO
+    DO j=2,ny-1
+        DO i = 2,nx-1
+            vor(i,j) = iblank_cc(i,j)*((2/(2*dx(i,j)+dx(i+1,j)+dx(i-1,j)))*(v(i+1,j) - v(i-1,j)) &
+                                      -(2/(2*dy(i,j)+dy(i,j+1)+dy(i,j-1)))*(u(i,j+1) - u(i,j-1)))
+        END DO
+    END DO
 
-    ext = '.dat'
-    fname = 'Data/data.'
-    write(no, "(I7.7)") write_flag/1000
-    fname = TRIM(ADJUSTL(fname))//no
-    fname = TRIM(ADJUSTL(fname))//TRIM(ADJUSTL(ext))
+    vor(nx,:) = vor(nx-1,:)
+
+    ! ext = '.dat'
+    ! fname = 'Data/data.'
+    write(fname, "('Data/data.',I7.7,'.dat')") int(write_flag*dt)
+    ! fname = TRIM(ADJUSTL(fname))//no
+    ! fname = TRIM(ADJUSTL(fname))//TRIM(ADJUSTL(ext))
 
     open(13, file=fname, status='unknown')
     WRITE(13,*) 'TITLE = "Post Processing Tecplot"'
-    WRITE(13,*) 'VARIABLES = "X", "Y", "U", "V", "P",' !"Vorticity", "iblank", "Ghost", "Velocity Magnitude"'
+    WRITE(13,*) 'VARIABLES = "X", "Y", "U", "V", "P", "Vorticity", "iblank", "Ghost"'!, "Velocity Magnitude"'
     WRITE(13,*) 'ZONE T="BIG ZONE", I=',nx,', J=',ny,', DATAPACKING=POINT'
     
     DO j=1,ny
         DO i = 1,nx
-            WRITE(13,*) i, j, U(i,j), V(i,j), P(i,j)!, vor(i,j), iblank_cc(i,j), ghost(i,j), SQRT(u(i,j)**2 + v(i,j)**2)
+            WRITE(13,*) x(i), y(j), U(i,j), V(i,j), P(i,j), vor(i,j), iblank_cc(i,j), ghost(i,j)!, SQRT(u(i,j)**2 + v(i,j)**2)
         END DO
     END DO
     close(13)

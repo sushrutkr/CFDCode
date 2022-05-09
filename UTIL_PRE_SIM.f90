@@ -1,45 +1,45 @@
-SUBROUTINE readdata()
-    USE global_variables
-    ! READing Input Data
-    OPEN(2, file='input.dat', status='old')
-    READ(2,*) 
-    READ(2,*)
-    READ(2,*) restart, re_time
-    READ(2,*)
-    READ(2,*)
-    READ(2,*)
-    READ(2,*) nx, ny
-    READ(2,*)
-    READ(2,*)
-    READ(2,*) lx, ly
-    READ(2,*)
-    READ(2,*)
-    READ(2,*)
-    READ(2,*)
-    READ(2,*) w_AD, w_PPE, AD_itermax, PPE_itermax, solvetype_AD, solvetype_ppe
-    READ(2,*)
-    READ(2,*)
-    READ(2,*)
-    READ(2,*)
-    READ(2,*) errormax, tmax, dt, Re, mu
-    READ(2,*)
-    READ(2,*)
-    READ(2,*)
-    READ(2,*) write_inter
-    CLOSE(2)
+subroutine readdata()
+    use global_variables
+    ! reading input data
+    open(2, file='input.dat', status='old')
+    read(2,*) 
+    read(2,*)
+    read(2,*) restart, re_time
+    read(2,*)
+    read(2,*)
+    read(2,*)
+    read(2,*) nx, ny
+    read(2,*)
+    read(2,*)
+    read(2,*) lx, ly
+    read(2,*)
+    read(2,*)
+    read(2,*)
+    read(2,*)
+    read(2,*) w_ad, w_ppe, ad_itermax, ppe_itermax, solvetype_ad, solvetype_ppe
+    read(2,*)
+    read(2,*)
+    read(2,*)
+    read(2,*)
+    read(2,*) errormax, tmax, dt, re, mu
+    read(2,*)
+    read(2,*)
+    read(2,*)
+    read(2,*) write_inter
+    close(2)
 
     ! nx = nx + 2
     ! ny = ny + 2
-    ! dx = lx/(nx) !!!!!!!!!!! TO BE COMMENTED LATER ON
+    ! dx = lx/(nx) !!!!!!!!!!! to be commented later on
     ! dy = ly/(ny)
     nxf = nx + 1
     nyf = ny + 1
     nx = nx + 2
     ny = ny + 2
-END SUBROUTINE
+end subroutine
 
-SUBROUTINE domain_init()
-    USE global_variables
+subroutine domain_init()
+    use global_variables
     use files
 
     real :: dummy
@@ -48,7 +48,7 @@ SUBROUTINE domain_init()
     ! dxc = lx/(nx-2)
     ! dyc = ly/(ny-2)
     
-    ! Reading Face Coordinates
+    ! reading face coordinates
     open(x_face, file='xgrid.dat', status='old')
     do i = 1, nxf
         read(x_face,*) dummy, xf(i)
@@ -61,14 +61,14 @@ SUBROUTINE domain_init()
     enddo
     close(y_face)
 
-    ! Setting up the cell centers
-    DO i = 2,nx-1
+    ! setting up the cell centers
+    do i = 2,nx-1
         x(i) = (xf(i-1)+xf(i))/2.0 
-    END DO
+    end do
     
-    DO j = 2,ny-1
+    do j = 2,ny-1
         y(j) = (yf(j-1)+yf(j))/2.0
-    END DO
+    end do
 
 
     x(1) = -x(2)
@@ -94,77 +94,109 @@ SUBROUTINE domain_init()
     dy(:,ny) = dy(:,ny-1)
 
     open(gridfile, file='grid.dat', status='unknown')
-    write(*,*) 'Writing Grid Data'
-    WRITE(gridfile,*) 'TITLE = "Post Processing Tecplot"'
-    WRITE(gridfile,*) 'VARIABLES = "X", "Y", "dxi", "dyi"'
-    WRITE(gridfile,*) 'ZONE T="BIG ZONE", I=',nx,', J=',ny,', DATAPACKING=POINT'
+    write(*,*) 'writing grid data'
+    write(gridfile,*) 'title = "post processing tecplot"'
+    write(gridfile,*) 'variables = "x", "y", "dxi", "dyi"'
+    write(gridfile,*) 'zone t="big zone", i=',nx,', j=',ny,', datapacking=point'
 
     do j=1,ny
         do i=1,nx
-            WRITE(gridfile,*) i,j,dx(i,j),dy(i,j)
+            write(gridfile,*) x(i),y(j),dx(i,j),dy(i,j)
         enddo
     enddo
     close(gridfile)
 
-END SUBROUTINE
+end subroutine
 
-SUBROUTINE flow_init()
+subroutine flow_init()
 
-    USE global_variables 
-    USE immersed_boundary
-    USE boundary_conditions
+    use global_variables 
+    use immersed_boundary
+    use boundary_conditions
 
     character(len=50) :: fname, no, ext  
     real :: dump 
     
-    IF (restart .EQ. 0) THEN
+    if (restart .eq. 0) then
         u = 0
         v = 0
         uf = 0
         vf = 0
         p = 0
         t = 0
-        CALL set_dirichlet_bc()
-        CALL set_neumann_bc()
+        call set_dirichlet_bc()
+        call set_neumann_bc()
 
-    ELSE 
+    else 
         t = re_time
-        write_flag = 1000*re_time
-        ext = '.dat'
-        fname = 'data.'
-        WRITE(no, "(I7.7)") re_time
-        fname = TRIM(ADJUSTL(fname))//no
-        fname = TRIM(ADJUSTL(fname))//TRIM(ADJUSTL(ext))
+        write_flag = int(t/dt)
+        ! ext = '.dat'
+        ! fname = 'Data/data.'
+        ! write(no, "(i7.7)") re_time
+        ! fname = trim(adjustl(fname))//no
+        ! fname = trim(adjustl(fname))//trim(adjustl(ext))
+        write(fname, "('Data/data.',I7.7,'.dat')") int(write_flag*dt)
         open(3, file=fname, status='unknown')
-        READ(3,*) 
-        READ(3,*) 
-        READ(3,*) 
+        read(3,*) 
+        read(3,*) 
+        read(3,*) 
         
-        DO j=1,ny
-            DO i = 1,nx
-                READ(3,*) x(i), y(j), u(i,j), v(i,j), p(i,j), dump, dump, dump
-            END DO
-        END DO
+        do j=1,ny
+            do i = 1,nx
+                read(3,*) x(i), y(j), u(i,j), v(i,j), p(i,j), dump, dump, dump
+            end do
+        end do
         close(3)
-    END IF
+    end if
 
-    CALL set_SSM_bc()
+    call set_ssm_bc()
     
-    DO j=1,ny-2
-        DO i=2,nx-2
+    do j=1,ny-2
+        do i=2,nx-2
             uf(i,j) = iblank_fcu(i,j)*(u(i+1,j+1) + u(i,j+1))/2
-        END DO
-    END DO
+        end do
+    end do
 
-    DO j = 2,ny-2
-        DO i = 1,nx-2
+    do j = 2,ny-2
+        do i = 1,nx-2
             vf(i,j) = iblank_fcv(i,j)*(v(i+1,j+1) + v(i+1,j))/2
-        END DO 
-    END DO
+        end do 
+    end do
 
-    ! Comment This out when appying top and bottom wall bc
+    ! comment this out when appying top and bottom wall bc
     ! uf(nx,:) = iblank_fcu(nx,:)*(2*u(nx,2:ny-1) - uf(nx-1,:))
     ! vf(:,ny) = iblank_fcv(:,ny)*(2*v(2:nx-1,ny) - vf(:,ny-1))
 
-END SUBROUTINE
+end subroutine
 
+subroutine probe_init()
+    use global_variables
+    use immersed_boundary
+    use stats
+    use files
+
+    integer, dimension(1) :: xind, yind
+
+    open(probe_input_file, file='probe.dat', status='old')
+    read(probe_input_file,*) nprobes
+    read(probe_input_file,*) 
+    allocate(probe_loc(nprobes,2), probe_index_x(nprobes), probe_index_y(nprobes))
+    do i = 1,nprobes
+        read(probe_input_file,*) probe_loc(i,1), probe_loc(i,2)
+    enddo
+    close(probe_input_file)
+
+    do i = 1,nprobes
+        xind = minloc(abs(x(:)-probe_loc(i,1)))
+        yind = minloc(abs(y(:)-probe_loc(i,2)))
+        print *, xind, yind
+        probe_index_x(i) = xind(1)
+        probe_index_y(i) = yind(1)
+    enddo
+
+    open(probe_output_file, file='probe_output.dat', status='unknown')
+    write(probe_output_file,*) nprobes, probe_loc, probe_index_x, probe_index_y
+    write(probe_output_file,*) 
+    write(probe_output_file,*) "Time  U   V  P"
+
+endsubroutine 

@@ -6,6 +6,8 @@ program CFDCode
     USE global_variables
     USE immersed_boundary
     USE stats
+    use files
+
 
     CALL cpu_time(start)
     CALL readdata()
@@ -26,19 +28,20 @@ program CFDCode
     allocate(p(nx,ny), pk(nx,ny), uf(nx,ny-2), vf(nx-2,ny), bp(nx-2))
     allocate(vor(nx,ny), velmag(nx,ny))
     allocate(bx(nx-2), by(nx-2), un(nx-2), vn(nx-2), ukx(nx-2), vky(nx-2), bcx(nx-2), bcy(nx-2))
-    allocate(p_coeff_drag(nx,ny))
+    allocate(p_coeff_drag(nx,ny),p_coeff_lift(nx,ny))
     ! allocate(coeff_ad(nx,ny), coeff_ppe(nx,ny))
 
 
-    open(14, file="drag_history.dat", status='unknown')
-    write(14,*) " Drag around the body"
+    open(14, file="force_history.dat", status='unknown')
+    write(14,*) " Lift and Drag around the body"
     write(14,*)
-    write(14,*) "Time, Pressure Drag, Form Drag"
+    write(14,*) "Time, Drag, Drag Coefficient, Lift, Lift Coefficient"
     write(14,*) 
     
     ! Defining Coefficient for [A]x=b   
 
-    CALL domain_init()   
+    CALL domain_init()  
+    call probe_init() 
     CALL calc_in_cells()
     CALL flow_init()
     write(11,*) "Initiating Calculations .........................."
@@ -50,6 +53,8 @@ program CFDCode
     ELSE
         t = re_time
     END IF
+
+
     DO WHILE (t<tmax)
         CALL set_dirichlet_bc()
         CALL set_neumann_bc()
@@ -60,10 +65,10 @@ program CFDCode
         write(11,*) t, errorx, errory, errorppe
 
         write_flag = write_flag + 1
-        IF (write_flag .EQ. 275) THEN
-            CALL data_write()
+        ! IF (write_flag .EQ. 275) THEN
+        !     CALL data_write()
             
-        END IF
+        ! END IF
 
         IF (mod(write_flag,write_inter) .EQ. 0) THEN
             CALL data_write()
@@ -71,7 +76,9 @@ program CFDCode
 
         CALL calc_drag
 
-        write(14,*) t, force_drag, coeff_drag
+        write(14,*) t, force_drag, coeff_drag, force_lift, coeff_lift
+
+        write(probe_output_file,*) t, u(probe_index_x,probe_index_y), v(probe_index_x,probe_index_y), p(probe_index_x,probe_index_y)
         t = t+dt
     END DO
 
@@ -90,10 +97,11 @@ program CFDCode
     deallocate(vor,velmag)
     deallocate(p, pk, bp, vf, uf)
     deallocate(bx, by, un, vn, ukx, vky, bcx, bcy)
-    deallocate(p_coeff_drag)
+    deallocate(p_coeff_drag, p_coeff_lift)
     call cpu_time(finish)
 
     write(11,*) "Total Simulation Time : ", (finish-start)/60 , "mins"
     close(11)
+    close(probe_output_file)
 
 end program CFDCode

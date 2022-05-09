@@ -293,7 +293,7 @@ subroutine PPESolver()
     ! close(gridfile)
 
     CALL set_pressure_BC()
-    DO WHILE(errorppe>errormax)
+    DO WHILE(errorppe>errormax)! .and. iter<PPE_itermax)
         DO j=2,ny-1
             DO i=2,nx-1
                 ! coeff = coeff_abs + dx2*ghost(i+1,j) + dx2*ghost(i-1,j) &
