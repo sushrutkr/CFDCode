@@ -127,7 +127,7 @@ subroutine flow_init()
         call set_dirichlet_bc()
         call set_neumann_bc()
 
-    else 
+    elseif (restart .eq. 1) then
         t = re_time
         write_flag = int(t/dt)
         ! ext = '.dat'
@@ -144,6 +144,28 @@ subroutine flow_init()
         do j=1,ny
             do i = 1,nx
                 read(3,*) x(i), y(j), u(i,j), v(i,j), p(i,j), dump, dump, dump
+            end do
+        end do
+        close(3)
+
+    else
+        write(*,*) 'restarting with refined grid'
+        t = re_time
+        write_flag = int(t/dt)
+        ! ext = '.dat'
+        ! fname = 'Data/data.'
+        ! write(no, "(i7.7)") re_time
+        ! fname = trim(adjustl(fname))//no
+        ! fname = trim(adjustl(fname))//trim(adjustl(ext))
+        fname = 'data_init_refined.dat'
+        open(3, file=fname, status='old')
+        read(3,*) 
+        read(3,*) 
+        read(3,*) 
+        
+        do j=1,ny
+            do i = 1,nx
+                read(3,*) x(i), y(j), u(i,j), v(i,j), p(i,j)
             end do
         end do
         close(3)

@@ -3,7 +3,8 @@ subroutine writepostproc()
     use global_variables
     use boundary_conditions
     use immersed_boundary
-    character(len=50) :: fname, no, ext
+    integer :: nvar_postproc
+    character(len=50) :: fname, no, ext, format_postproc
 
     !modifying domain data
     x(1) = 0 
@@ -60,6 +61,9 @@ subroutine writepostproc()
             velmag(i,j) = (u(i,j)**2 + v(i,j)**2)**0.5 
         END DO
     END DO
+
+    nvar_postproc = 8
+    write(format_postproc, '( "(", I6, "(3x,F13.6))" )' )  nvar_postproc
         
     !Writing Files For Post Processing
     open(12, file='data_final.dat', status='unknown')
@@ -69,7 +73,7 @@ subroutine writepostproc()
     
     DO j=1,ny
         DO i = 1,nx
-            WRITE(12,*) x(i), y(j), U(i,j), V(i,j),P(i,j), vor(i,j), iblank_cc(i,j), ghost(i,j)
+            WRITE(12,format_postproc) x(i), y(j), U(i,j), V(i,j),P(i,j), vor(i,j), iblank_cc(i,j), ghost(i,j)
         END DO
     END DO
     close(12)
@@ -78,7 +82,10 @@ end subroutine
 SUBROUTINE data_write()
     use global_variables
     use immersed_boundary
-    character(len=50) :: fname, no, ext
+    integer :: nvar_postproc
+    character(len=50) :: fname, no, ext, format_postproc
+
+
     vor = 0
     DO j=2,ny-1
         DO i = 2,nx-1
@@ -89,11 +96,10 @@ SUBROUTINE data_write()
 
     vor(nx,:) = vor(nx-1,:)
 
-    ! ext = '.dat'
-    ! fname = 'Data/data.'
     write(fname, "('Data/data.',I7.7,'.dat')") int(write_flag*dt)
-    ! fname = TRIM(ADJUSTL(fname))//no
-    ! fname = TRIM(ADJUSTL(fname))//TRIM(ADJUSTL(ext))
+
+    nvar_postproc = 8
+    write(format_postproc, '( "(", I6, "(3x,F13.6))" )' )  nvar_postproc
 
     open(13, file=fname, status='unknown')
     WRITE(13,*) 'TITLE = "Post Processing Tecplot"'
@@ -102,7 +108,7 @@ SUBROUTINE data_write()
     
     DO j=1,ny
         DO i = 1,nx
-            WRITE(13,*) x(i), y(j), U(i,j), V(i,j), P(i,j), vor(i,j), iblank_cc(i,j), ghost(i,j)!, SQRT(u(i,j)**2 + v(i,j)**2)
+            WRITE(13,format_postproc) x(i), y(j), U(i,j), V(i,j), P(i,j), vor(i,j), iblank_cc(i,j), ghost(i,j)!, SQRT(u(i,j)**2 + v(i,j)**2)
         END DO
     END DO
     close(13)

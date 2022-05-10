@@ -23,6 +23,7 @@ SUBROUTINE calc_in_cells()
     iblank_fcv = 1
 
     ncinside = 0 
+    aoa = (pi/180)*30
     
     SELECT CASE(shape)
 
@@ -67,11 +68,11 @@ SUBROUTINE calc_in_cells()
 
 
     case(3)
-        write(11,*) 'Ellipse added with major axis length = ', major, ' & minor axis length = ', minor
+        write(11,*) 'Ellipse added with major axis length = ', a, ' & minor axis length = ', b, ' at an AoA of ', aoa
         DO j = 1,ny
             DO i = 1,nx
-                IF ((((x(i)-xcent)*cos(aoa) - (y(j)-ycent)*sin(aoa))**2/major**2 &
-                    +((x(i)-xcent)*sin(aoa) + (y(j)-ycent)*cos(aoa))**2/minor**2) .LE. 1) THEN
+                IF ((((x(i)-xcent)*cos(aoa) - (y(j)-ycent)*sin(aoa))**2/a**2 &
+                    +((x(i)-xcent)*sin(aoa) + (y(j)-ycent)*cos(aoa))**2/b**2) .LE. 1) THEN
                     iblank_cc(i,j) = 0
                     iblank_fcu(i,j-1) = 0
                     iblank_fcu(i-1,j-1) = 0

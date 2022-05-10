@@ -8,6 +8,7 @@ module global_variables
     real :: cflx, cfly, rx, ry, aad, bad, appe, bppe
     real :: x0, y0, r0, r, vt
     real :: start, finish
+    real, parameter :: pi = 3.141592653589793
     real, allocatable, dimension(:) :: x, y, xf, yf
     real, allocatable, dimension(:) :: bx, un, ukx, bcx, by, vn, vky, bcy, bp
     real, allocatable, dimension(:,:) :: u, v, uk, vk, ukp1, vkp1, vor, p, pk, uf, vf,velmag
@@ -22,7 +23,7 @@ end module boundary_conditions
 
 module immersed_boundary
     real :: a, b
-    real :: xcent, ycent
+    real :: xcent, ycent, aoa
     integer :: ncinside, shape
     real, allocatable, dimension(:,:) :: iblank_cc, iblank_fcv, iblank_fcu, ghost
 end module immersed_boundary

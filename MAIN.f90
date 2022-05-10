@@ -65,10 +65,10 @@ program CFDCode
         write(11,*) t, errorx, errory, errorppe
 
         write_flag = write_flag + 1
-        ! IF (write_flag .EQ. 275) THEN
-        !     CALL data_write()
+        IF (write_flag .EQ. 275) THEN
+            CALL data_write()
             
-        ! END IF
+        END IF
 
         IF (mod(write_flag,write_inter) .EQ. 0) THEN
             CALL data_write()
